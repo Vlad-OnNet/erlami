@@ -71,11 +71,11 @@ loop(ErlamiClient, Connection, Acc) when is_list(Acc) ->
             ),
             [];
         Line ->
-        %%    case Line of
-        %%        'exit_loop' -> Acc;
-        %%        _ ->
+            case Line of
+                'exit_loop' -> Acc;
+                _ ->
                     try string:concat(Acc, Line)
-        %%                string:concat(Acc, Line)
+                        string:concat(Acc, Line)
                     catch error:Err ->
                         lager:info("Error: ~p, Acc: ~p",[Err, Acc]),
                         lager:info("Error: ~p, Line: ~ts",[Err, Line]),
