@@ -58,36 +58,44 @@ read_salutation(ErlamiClient, Connection) ->
     ErlamiClient::string(), Connection::#erlami_connection{},
     Acc::string()
 ) -> none().
-loop(_ErlamiClient, _Connection, 'exit_loop') -> 'ok';
+
+loop(_ErlamiClient, _Connection, exit_loop) ->
+    ok;
+
 loop(ErlamiClient, Connection, Acc) when is_list(Acc) ->
-    NewAcc = case wait_line(ErlamiClient, Connection) of
-        "\r\n" ->
-            UnmarshalledMsg = erlami_message:unmarshall(Acc),
-            dispatch_message(
-                ErlamiClient, UnmarshalledMsg,
-                erlami_message:is_response(UnmarshalledMsg),
-                erlami_message:is_event(UnmarshalledMsg),
+    NewAcc =
+        case wait_line(ErlamiClient, Connection) of
+            "\r\n" ->
+                UnmarshalledMsg = erlami_message:unmarshall(Acc),
+                dispatch_message(
+                    ErlamiClient,
+                    UnmarshalledMsg,
+                    erlami_message:is_response(UnmarshalledMsg),
+                    erlami_message:is_event(UnmarshalledMsg),
+                    Acc
+                ),
+                [];
+
+            Line when Line =:= exit_loop;
+                       Line =:= "exit_loop";
+                       Line =:= <<"exit_loop">> ->
+                Acc;
+
+            Line when is_list(Line) ->
+                Acc ++ Line;
+
+            Line when is_binary(Line) ->
+                Acc ++ binary_to_list(Line);
+
+            Line ->
+                lager:error("Bad Line type: ~p", [Line]),
                 Acc
-            ),
-            [];
-        Line ->
-            case Line of
-                'exit_loop' -> Acc;
-                _ ->
-                    try string:concat(Acc, Line) ->
-                        string:concat(Acc, Line)
-                    catch error:Err ->
-                        lager:info("Error: ~p, Acc: ~p",[Err, Acc]),
-                        lager:info("Error: ~p, Line: ~ts",[Err, Line]),
-                        Acc
-                    end
-        %%    end
-    end,
+        end,
     loop(ErlamiClient, Connection, NewAcc);
+
 loop(ErlamiClient, Connection, Acc) ->
     lager:error("loop/3 unknown Acc: ~p", [Acc]),
     loop(ErlamiClient, Connection, []).
-
 
 %% @doc This function is used to select and dispatch a message by pattern
 %% matching on its type. Will notify the erlami_client of a response or an
