@@ -6,12 +6,7 @@ export DRV_CFLAGS
 ERLANG_ARCH = 64
 export ERLANG_ARCH
 ERLC_OPTS = +debug_info
-ERLC_OPTS += +'{parse_transform, lager_transform}'
 
-DEPS += lager
-dep_lager = git git://github.com/basho/lager.git master
-DEPS += covertool
-dep_covertool = git git://github.com/idubrov/covertool.git HEAD
 
 
 rebar_dep: preprocess pre-deps deps pre-app app post-app
