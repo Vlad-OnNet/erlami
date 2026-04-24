@@ -76,10 +76,15 @@ loop(ErlamiClient, Connection, Acc) when is_list(Acc) ->
                 ),
                 [];
 
-            Line when Line =:= exit_loop;
-                       Line =:= "exit_loop";
-                       Line =:= <<"exit_loop">> ->
-                Acc;
+            exit_loop ->
+                exit_loop;
+
+            Line when Line =:= closed;
+                       Line =:= enotconn;
+                       Line =:= {error, closed};
+                       Line =:= {error, enotconn} ->
+                lager:info("AMI reader stop: ~p", [Line]),
+                exit_loop;
 
             Line when is_list(Line) ->
                 Acc ++ Line;
